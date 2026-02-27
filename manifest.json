@@ -1,0 +1,16 @@
+{
+  "name": "LumiRead — Smart PDF Reader",
+  "short_name": "LumiRead",
+  "description": "A feature-rich PDF reader with highlights, notes, bookmarks, and more.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFF",
+  "theme_color": "#4F46E5",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='36' fill='%234F46E5'/><text y='140' x='30' font-size='120'>📖</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
