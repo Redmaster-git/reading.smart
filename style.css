@@ -56,6 +56,9 @@ body {
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   transition: background var(--t), color var(--t);
+  /* Allow text selection everywhere — individual elements that need none can override */
+  user-select: text;
+  -webkit-user-select: text;
 }
 button { cursor: pointer; border: none; background: none; color: inherit; font-family: inherit; font-size: inherit; }
 input, textarea, select { font-family: inherit; font-size: inherit; }
@@ -262,19 +265,21 @@ input, textarea, select { font-family: inherit; font-size: inherit; }
   flex: 1;
   position: relative;
   overflow: hidden;
-  /* Explicitly set min-height:0 so flex doesn't collapse */
   min-height: 0;
   background: #888;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .pdf-scroller {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   overflow: auto;
-  overflow-x: auto;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* DO NOT use -webkit-overflow-scrolling:touch — it blocks text selection on iOS */
   background: #555;
+  /* Allow text selection to propagate up from child spans */
+  user-select: text;
+  -webkit-user-select: text;
 }
 body.dark .pdf-scroller { background: #111; }
 
@@ -287,90 +292,120 @@ body.dark .pdf-scroller { background: #111; }
   min-height: 100%;
 }
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PDF PAGE — layer stack
+   canvas z:0  (visual, no pointer events)
+   hl-layer z:1 (highlight boxes)
+   text-layer z:2 (selectable text)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 .pdf-page-wrap {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
   background: #fff;
   box-shadow: 0 2px 16px rgba(0,0,0,.35);
   border-radius: 2px;
-  flex-shrink: 0;
-  display: block;
-  position: relative; /* REQUIRED — canvas + text + highlight layers stack inside */
-  overflow: hidden;
+  /* Do NOT use overflow:hidden — it clips text selection handles on mobile */
+  overflow: visible;
+  /* Allow selection to work in children */
+  user-select: text;
+  -webkit-user-select: text;
 }
-/* Canvas is purely visual — pointer-events:none lets text layer receive all touches */
-.pdf-page-wrap canvas {
-  display: block;
-  position: absolute;
-  top: 0; left: 0;
-  z-index: 0;
-  pointer-events: none; /* CRITICAL: without this, canvas eats all touch/click events */
-}
-body.dark .pdf-page-wrap canvas { filter: invert(1) hue-rotate(180deg); }
 .pdf-page-wrap.cur-page { outline: 3px solid var(--blue); }
 
-/* ── Text layer — invisible but fully selectable ── */
-.pdf-text-layer {
-  position: absolute;
-  top: 0; left: 0;
-  z-index: 3; /* above canvas(0) and hl-layer(1) */
-  overflow: hidden;
-  line-height: 1;
-  /* Allow text selection on all platforms */
-  user-select: text;
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  cursor: text;
-  /* CRITICAL for mobile: allow long-press selection, don't swallow scroll */
-  touch-action: pan-x pan-y;
-  /* Must receive pointer events */
-  pointer-events: all;
+.pdf-page-wrap canvas {
+  position: absolute; top: 0; left: 0;
+  z-index: 0; display: block;
+  pointer-events: none !important;
 }
-/* Spans injected by PDF.js — transparent so canvas shows through */
-.pdf-text-layer span {
-  color: transparent !important;
-  position: absolute;
-  white-space: pre;
-  transform-origin: 0% 0%;
-  cursor: text;
-  user-select: text;
-  -webkit-user-select: text;
-  /* Don't let individual spans eat touch events before selection logic */
-  touch-action: pan-x pan-y;
-}
-.pdf-text-layer br { display: none; }
+body.dark .pdf-page-wrap canvas { filter: invert(1) hue-rotate(180deg); }
 
-/* Selection colour — keep text transparent, show blue background */
+.pdf-hl-layer {
+  position: absolute; top: 0; left: 0;
+  z-index: 1; pointer-events: none; overflow: hidden;
+}
+.hl-box {
+  position: absolute; border-radius: 2px;
+  opacity: 0.45; mix-blend-mode: multiply; pointer-events: none;
+}
+body.dark .hl-box { mix-blend-mode: screen; }
+
+.pdf-text-layer {
+  position: absolute; top: 0; left: 0;
+  z-index: 2; overflow: visible; line-height: 1;
+  pointer-events: auto !important; cursor: text;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  /* pan-y: vertical scroll still works; long-press selection also works */
+  touch-action: pan-y;
+}
+.pdf-text-layer span {
+  position: absolute; transform-origin: 0 0;
+  white-space: pre; color: transparent !important;
+  cursor: text;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  font-family: sans-serif;
+}
 .pdf-text-layer span::selection,
 .pdf-text-layer ::selection {
-  background: rgba(37, 99, 235, 0.4) !important;
+  background: rgba(37,99,235,0.4) !important;
   color: transparent !important;
 }
 .pdf-text-layer span::-moz-selection,
 .pdf-text-layer ::-moz-selection {
-  background: rgba(37, 99, 235, 0.4) !important;
+  background: rgba(37,99,235,0.4) !important;
   color: transparent !important;
 }
-/* Dark mode — invert text layer to match canvas */
 body.dark .pdf-text-layer { filter: invert(1) hue-rotate(180deg); }
 
-/* ── Highlight layer — coloured boxes behind text ── */
-.pdf-hl-layer {
-  position: absolute;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 1; /* below text layer so selection still works */
-  overflow: hidden;
+/* ── Floating highlight toolbar (shown after text selection) ── */
+#hlToolbar {
+  position: fixed;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  background: #1E1B4B;
+  border-radius: 24px;
+  padding: .4rem .6rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  white-space: nowrap;
+  pointer-events: auto;
 }
-.hl-box {
+#hlToolbar.hidden { display: none; }
+#hlToolbar::after {
+  content: '';
   position: absolute;
-  border-radius: 2px;
-  mix-blend-mode: multiply;
-  pointer-events: none;
+  bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom: none;
+  border-top-color: #1E1B4B;
 }
-body.dark .hl-box { mix-blend-mode: screen; }
+.hl-tb-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.3);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform .15s, border-color .15s;
+}
+.hl-tb-btn:active { transform: scale(1.2); border-color: #fff; }
+.hl-tb-copy {
+  font-size: .9rem;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  color: white;
+  cursor: pointer;
+  transition: background .15s;
+}
+.hl-tb-copy:active { background: rgba(255,255,255,.3); }
 
-/* ── Floating selection toolbar ── */
-.sel-toolbar {
+
   position: fixed;
   z-index: 500;
   display: flex;

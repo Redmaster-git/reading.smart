@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <title>LumiRead</title>
   <link rel="manifest" href="manifest.json"/>
   <link rel="stylesheet" href="style.css"/>
-  <!-- PDF.js text layer styles — required for text selection to work -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -17,17 +15,14 @@
 
 <!-- ══════════ LANDING ══════════ -->
 <div id="screenLanding" class="screen active">
-
   <div class="land-nav">
     <div class="land-brand">📖 <strong>LumiRead</strong></div>
     <button id="themeToggleLib" class="icon-btn">🌙</button>
   </div>
-
   <div class="land-hero">
     <div class="neon-tag">⚡ Level up brothers ⚡</div>
     <h1 class="hero-h1">Your Books.<br/><em>Reimagined.</em></h1>
     <p class="hero-sub">Highlights · Notes · Bookmarks · Search</p>
-
     <label class="upload-box" id="uploadZone">
       <input type="file" id="fileInput" accept=".pdf" multiple hidden/>
       <div class="upload-ico">📂</div>
@@ -35,7 +30,6 @@
       <div class="upload-hint">Multiple files · Stored offline</div>
     </label>
   </div>
-
   <div class="lib-header">
     <h2>My Library</h2>
     <div class="lib-header-r">
@@ -43,36 +37,27 @@
       <button id="clearLibBtn" class="btn-danger-sm">Clear</button>
     </div>
   </div>
-
   <div id="libraryGrid" class="lib-grid">
     <div class="empty-lib"><span>📚</span><p>No books yet — upload a PDF above!</p></div>
   </div>
-
   <div class="stats-row">
     <div class="stat-chip"><span>🔥</span><b id="streakCount">0</b><small>streak</small></div>
     <div class="stat-chip"><span>⏱️</span><b id="totalTime">0m</b><small>today</small></div>
     <div class="stat-chip"><span>📚</span><b id="bookCount">0</b><small>books</small></div>
   </div>
-
 </div>
 
 <!-- ══════════ READER ══════════ -->
 <div id="screenReader" class="screen">
-
-  <!-- Top bar: back | title | theme | menu -->
   <div class="rdr-top" id="rdrTop">
     <button id="backToLib" class="icon-btn">◀</button>
     <span id="bookTitle" class="rdr-title">—</span>
     <div style="display:flex;gap:.25rem;margin-left:auto;flex-shrink:0">
       <button id="themeToggleReader" class="icon-btn">🌙</button>
-      <button id="menuBtn" class="icon-btn" title="More tools">⋮</button>
+      <button id="menuBtn" class="icon-btn">⋮</button>
     </div>
   </div>
-
-  <!-- Thin progress strip -->
   <div class="prog-strip"><div id="progFill" class="prog-fill"></div></div>
-
-  <!-- ★ PDF AREA — fills ALL remaining space ★ -->
   <div id="pdfArea" class="pdf-area">
     <div id="pdfScroller" class="pdf-scroller">
       <div id="pdfPages" class="pdf-pages"></div>
@@ -80,70 +65,48 @@
     <canvas id="drawCanvas" class="draw-canvas hidden"></canvas>
     <div id="stickyLayer" class="sticky-layer"></div>
   </div>
-
-  <!-- Bottom bar: nav + tool buttons -->
   <div class="rdr-bottom" id="rdrBottom">
     <button class="nav-arr" id="prevPage">‹</button>
-
     <div class="page-pill">
       <input type="number" id="pageInput" class="page-inp" min="1" value="1"/>
       <span class="page-sep">/<span id="totalPagesLabel">1</span></span>
     </div>
-
     <button class="nav-arr" id="nextPage">›</button>
-
     <div class="btm-divider"></div>
-
-    <button class="btm-btn" id="notesTabBtn"    title="Notes">📝</button>
-    <button class="btm-btn" id="bookmarkTabBtn" title="Bookmarks">🔖</button>
-    <button class="btm-btn" id="searchTabBtn"   title="Search">🔎</button>
-    <button class="btm-btn" id="hiliteTabBtn"   title="Highlights">🖍️</button>
-    <button class="btm-btn" id="moreTabBtn"     title="More">🛠️</button>
+    <button class="btm-btn" id="notesTabBtn">📝</button>
+    <button class="btm-btn" id="bookmarkTabBtn">🔖</button>
+    <button class="btm-btn" id="searchTabBtn">🔎</button>
+    <button class="btm-btn" id="hiliteTabBtn">🖍️</button>
+    <button class="btm-btn" id="moreTabBtn">🛠️</button>
   </div>
-
 </div>
 
-<!-- ══════════ BOTTOM SHEETS ══════════ -->
+<!-- ══════════ SHEETS ══════════ -->
 <div class="sheet-backdrop hidden" id="sheetBackdrop"></div>
 
-<!-- Notes -->
 <div class="sheet hidden" id="sheetNotes">
   <div class="sheet-drag"></div>
-  <div class="sheet-hd">
-    <span id="notesPgLbl" class="sheet-title">Notes — Page 1</span>
-    <button class="sheet-x" data-close="sheetNotes">✕</button>
-  </div>
+  <div class="sheet-hd"><span id="notesPgLbl" class="sheet-title">Notes</span><button class="sheet-x">✕</button></div>
   <div class="sheet-body">
-    <textarea id="notesEditor" class="sheet-ta" placeholder="Write notes for this page…&#10;Tap Save or press Ctrl+S."></textarea>
-    <div class="sheet-row">
-      <button id="saveNoteBtn" class="btn-primary">💾 Save Note</button>
-      <span id="noteSavedMsg" class="ok-msg"></span>
-    </div>
+    <textarea id="notesEditor" class="sheet-ta" placeholder="Write notes for this page…"></textarea>
+    <div class="sheet-row"><button id="saveNoteBtn" class="btn-primary">💾 Save</button><span id="noteSavedMsg" class="ok-msg"></span></div>
     <div class="sheet-list-hdr">All Notes</div>
     <div id="allNotesList" class="sheet-list"></div>
   </div>
 </div>
 
-<!-- Bookmarks -->
 <div class="sheet hidden" id="sheetBookmarks">
   <div class="sheet-drag"></div>
-  <div class="sheet-hd">
-    <span class="sheet-title">Bookmarks</span>
-    <button class="sheet-x" data-close="sheetBookmarks">✕</button>
-  </div>
+  <div class="sheet-hd"><span class="sheet-title">Bookmarks</span><button class="sheet-x">✕</button></div>
   <div class="sheet-body">
     <button id="addBookmarkBtn" class="btn-primary" style="width:100%">🔖 Bookmark This Page</button>
-    <div id="bmList" class="sheet-list" style="margin-top:.75rem"><p class="empty-msg">No bookmarks yet.</p></div>
+    <div id="bmList" class="sheet-list" style="margin-top:.75rem"></div>
   </div>
 </div>
 
-<!-- Search -->
 <div class="sheet hidden" id="sheetSearch">
   <div class="sheet-drag"></div>
-  <div class="sheet-hd">
-    <span class="sheet-title">Search</span>
-    <button class="sheet-x" data-close="sheetSearch">✕</button>
-  </div>
+  <div class="sheet-hd"><span class="sheet-title">Search</span><button class="sheet-x">✕</button></div>
   <div class="sheet-body">
     <div class="search-row">
       <input id="searchInput" type="text" class="search-inp" placeholder="Search in PDF…"/>
@@ -158,36 +121,27 @@
   </div>
 </div>
 
-<!-- Highlights -->
 <div class="sheet hidden" id="sheetHilite">
   <div class="sheet-drag"></div>
-  <div class="sheet-hd">
-    <span class="sheet-title">Highlights</span>
-    <button class="sheet-x" data-close="sheetHilite">✕</button>
-  </div>
+  <div class="sheet-hd"><span class="sheet-title">Highlights</span><button class="sheet-x">✕</button></div>
   <div class="sheet-body">
-    <p class="sheet-hint">Select text on the PDF, then tap a colour.</p>
+    <p class="sheet-hint">Select text on the PDF, then tap a colour below.</p>
     <div id="swatchRow" class="swatch-row">
       <button class="swatch sel" data-col="#FFEAA7" style="background:#FFEAA7"></button>
-      <button class="swatch"     data-col="#81ECEC" style="background:#81ECEC"></button>
-      <button class="swatch"     data-col="#55EFC4" style="background:#55EFC4"></button>
-      <button class="swatch"     data-col="#FAB1A0" style="background:#FAB1A0"></button>
-      <button class="swatch"     data-col="#A29BFE" style="background:#A29BFE"></button>
-      <button class="swatch"     data-col="#FD79A8" style="background:#FD79A8"></button>
+      <button class="swatch" data-col="#81ECEC" style="background:#81ECEC"></button>
+      <button class="swatch" data-col="#55EFC4" style="background:#55EFC4"></button>
+      <button class="swatch" data-col="#FAB1A0" style="background:#FAB1A0"></button>
+      <button class="swatch" data-col="#A29BFE" style="background:#A29BFE"></button>
+      <button class="swatch" data-col="#FD79A8" style="background:#FD79A8"></button>
     </div>
-    <div id="hiliteList" class="sheet-list"><p class="empty-msg">No highlights yet.</p></div>
+    <div id="hiliteList" class="sheet-list"></div>
   </div>
 </div>
 
-<!-- More / Tools -->
 <div class="sheet hidden" id="sheetMore">
   <div class="sheet-drag"></div>
-  <div class="sheet-hd">
-    <span class="sheet-title">Tools</span>
-    <button class="sheet-x" data-close="sheetMore">✕</button>
-  </div>
+  <div class="sheet-hd"><span class="sheet-title">Tools</span><button class="sheet-x">✕</button></div>
   <div class="sheet-body">
-
     <div class="tool-sec">Zoom</div>
     <div class="tool-row">
       <button class="tool-chip" id="zoomOut">− Zoom Out</button>
@@ -199,43 +153,34 @@
       <button class="tool-chip tog" id="fitPageBtn">⊡ Fit Page</button>
     </div>
     <button class="tool-full tog" id="scrollModeBtn">≡ Continuous Scroll</button>
-
     <div class="tool-sec">Reading</div>
     <button class="tool-full tog" id="ttsBtn">🔊 Read Aloud</button>
     <button class="tool-full tog" id="focusBtn">🎯 Focus Mode</button>
-
     <div class="tool-sec">Draw</div>
     <button class="tool-full tog" id="drawBtn">✏️ Draw Mode</button>
     <div class="tool-row" style="align-items:center;gap:.6rem">
       <span class="tool-lbl">Colour:</span>
       <input type="color" id="drawColourPicker" value="#4F46E5" class="colour-pick"/>
     </div>
-
     <div class="tool-sec">Notes</div>
     <button class="tool-full" id="addStickyBtn">🗒️ Add Sticky Note</button>
-
     <div class="tool-sec">Study</div>
     <button class="tool-full" id="studyModeBtn">📖 Study Mode</button>
     <button class="tool-full" id="genSummaryBtn">🧠 Summary</button>
     <div id="summaryBox" class="summary-box"></div>
-
     <div class="tool-sec">Export</div>
     <button class="tool-full" id="exportTxtBtn">📄 Export TXT</button>
     <button class="tool-full" id="exportMdBtn">📝 Export Markdown</button>
     <button class="tool-full" id="exportPdfBtn">🖨️ Print / PDF</button>
-
     <div class="tool-sec">Security</div>
     <button class="tool-full" id="lockBtn">🔐 Password Lock</button>
-
     <div class="tool-sec">Dictionary</div>
     <p class="sheet-hint">Double-tap any word on the PDF.</p>
-    <div id="dictBox" class="dict-box"><p class="empty-msg">No word looked up yet.</p></div>
+    <div id="dictBox" class="dict-box"></div>
   </div>
 </div>
 
 <!-- ══════════ OVERLAYS ══════════ -->
-
-<!-- Lock -->
 <div class="modal hidden" id="lockModal">
   <div class="modal-card">
     <div class="modal-ico">🔐</div>
@@ -243,27 +188,35 @@
     <input type="password" id="lockInput" placeholder="Enter password…"/>
     <div class="modal-btns">
       <button class="btn-primary" id="lockConfirm">Confirm</button>
-      <button class="btn-ghost"   id="lockCancel">Cancel</button>
+      <button class="btn-ghost" id="lockCancel">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Word popup -->
 <div class="word-popup hidden" id="wordPopup">
   <button class="wp-x" id="wpClose">✕</button>
   <div class="wp-word" id="wpWord"></div>
   <div class="wp-phon" id="wpPhon"></div>
-  <div class="wp-pos"  id="wpPos"></div>
-  <div class="wp-def"  id="wpDef">Looking up…</div>
+  <div class="wp-pos" id="wpPos"></div>
+  <div class="wp-def" id="wpDef">Looking up…</div>
 </div>
 
-<!-- TTS floating bar -->
 <div class="tts-bar hidden" id="ttsBar">
-  🔊 <span id="ttsLabel">Reading page…</span>
+  🔊 <span id="ttsLabel">Reading…</span>
   <button id="ttsStopBtn" class="tts-stop">■ Stop</button>
 </div>
 
-<!-- Toast -->
+<!-- Floating highlight toolbar — shown after text selection -->
+<div id="hlToolbar" class="hl-toolbar hidden">
+  <button data-col="#FFEAA7" style="background:#FFEAA7" class="hl-tb-btn"></button>
+  <button data-col="#81ECEC" style="background:#81ECEC" class="hl-tb-btn"></button>
+  <button data-col="#55EFC4" style="background:#55EFC4" class="hl-tb-btn"></button>
+  <button data-col="#FAB1A0" style="background:#FAB1A0" class="hl-tb-btn"></button>
+  <button data-col="#A29BFE" style="background:#A29BFE" class="hl-tb-btn"></button>
+  <button data-col="#FD79A8" style="background:#FD79A8" class="hl-tb-btn"></button>
+  <button id="hlTbCopy" class="hl-tb-copy">📋</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="app.js"></script>
